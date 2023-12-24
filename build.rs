@@ -2,6 +2,7 @@ use std::process::Command;
 
 fn main() {
     println!("cargo:rerun-if-changed=./templates/*.html.tera");
+    println!("cargo:rerun-if-changed=./styles/*");
 
     let output = Command::new("bash")
         .arg("./scripts/tailwind.sh")
