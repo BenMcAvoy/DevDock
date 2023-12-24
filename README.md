@@ -3,7 +3,7 @@ A piece of software for personalised development containers for many people
 
 ## Steps
 - [x] Web server
-- [ ] TailwindCSS
+- [x] TailwindCSS
 - [ ] Docker connection
 - [ ] Basic OAuth2
 - [ ] Docker container

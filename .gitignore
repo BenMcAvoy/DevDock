@@ -19,3 +19,5 @@ Cargo.lock
 /target
 
 tailwind
+
+static/styles.css
