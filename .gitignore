@@ -21,3 +21,5 @@ Cargo.lock
 tailwind
 
 static/styles.css
+
+.env
