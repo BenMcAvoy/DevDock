@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate rocket;
 
+use rocket::fs::FileServer;
 use rocket_dyn_templates::*;
 
 use std::env;
@@ -16,6 +17,7 @@ fn rocket() -> _ {
     log::info!("Listening on http://localhost:{port}");
 
     rocket::build()
-        .mount("/", routes![index])
         .attach(Template::fairing())
+        .mount("/static", FileServer::from("./static/"))
+        .mount("/", routes![index])
 }
