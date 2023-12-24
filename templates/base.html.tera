@@ -11,7 +11,7 @@
   </head>
 
   <body class="bg-white dark:bg-black dark:text-white">
-    <div class="pl-4 pr-4">
+    <div class="m-8">
       {% block content %}{% endblock content %}
     </div>
   </body>
