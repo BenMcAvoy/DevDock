@@ -1,5 +1,0 @@
-{% extends "base" %}
-
-{% block content %}
-  <h1>Dev Dock</h1>
-{% endblock content %}
