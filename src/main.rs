@@ -66,7 +66,6 @@ async fn microsoft_callback(
         .await
         .context("failed to deserialize response")?;
 
-    // Set a private cookie with the user's name.
     cookies.add_private(
         Cookie::build(("email", user_info.email))
             .same_site(SameSite::Lax)
