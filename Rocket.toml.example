@@ -1,0 +1,8 @@
+[default.oauth.microsoft]
+provider = "Microsoft"
+client_id = ""
+client_secret = ""
+redirect_uri = "http://localhost:8000/auth/microsoft"
+
+[global]
+address = "0.0.0.0"
