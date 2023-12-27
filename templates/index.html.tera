@@ -2,4 +2,5 @@
 
 {% block content %}
   <h1>Welcome {{ email }}</h1>
+  <p>Your ID is {{ id }}</p>
 {% endblock content %}

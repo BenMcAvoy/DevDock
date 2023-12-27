@@ -17,6 +17,7 @@ use rocket_oauth2::{OAuth2, TokenResponse};
 
 struct User {
     pub email: String,
+    pub id: String,
 }
 
 #[rocket::async_trait]
@@ -28,9 +29,12 @@ impl<'r> request::FromRequest<'r> for User {
             .guard::<&CookieJar<'_>>()
             .await
             .expect("request cookies");
-        if let Some(cookie) = cookies.get_private("email") {
+        if let (Some(email_cookie), Some(id_cookie)) =
+            (cookies.get_private("email"), cookies.get_private("id"))
+        {
             return request::Outcome::Success(User {
-                email: cookie.value().to_string(),
+                email: email_cookie.value().to_string(),
+                id: id_cookie.value().to_string(),
             });
         }
 
@@ -42,6 +46,8 @@ impl<'r> request::FromRequest<'r> for User {
 struct MicrosoftUserInfo {
     #[serde(default, rename = "mail")]
     email: String,
+    #[serde(default, rename = "id")]
+    id: String,
 }
 
 #[get("/login/microsoft")]
@@ -72,6 +78,12 @@ async fn microsoft_callback(
             .build(),
     );
 
+    cookies.add_private(
+        Cookie::build(("id", user_info.id))
+            .same_site(SameSite::Lax)
+            .build(),
+    );
+
     Ok(Redirect::to("/"))
 }
 
@@ -85,7 +97,8 @@ fn index(user: User) -> Template {
     Template::render(
         "index",
         context! {
-            email: user.email
+            email: user.email,
+            id: user.id,
         },
     )
 }
