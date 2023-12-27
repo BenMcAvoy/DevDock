@@ -1,7 +1,0 @@
-{% extends "base" %}
-
-{% block content %}
-  <h1>Dev Dock</h1>
-
-  <a class="button" href="{{ url | safe }}">Login with Microsoft</a>
-{% endblock content %}
