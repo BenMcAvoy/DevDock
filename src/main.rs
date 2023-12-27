@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 // Error handling
 use anyhow::{Context, Error};
 
@@ -7,19 +9,22 @@ use reqwest::header::AUTHORIZATION;
 // Rocket
 use rocket::fs::FileServer;
 use rocket::http::{Cookie, CookieJar, SameSite, Status};
-use rocket::request;
 use rocket::response::{Debug, Redirect};
+use rocket::{error, request};
 use rocket::{get, routes};
 
 // Rocket extensions
 use rocket_dyn_templates::{context, Template};
 use rocket_oauth2::{OAuth2, TokenResponse};
 
+use chrono::{DateTime, Utc, Duration};
+
 struct User {
     pub email: String,
     pub id: String,
 }
 
+// Runs during a request to an endpoint
 #[rocket::async_trait]
 impl<'r> request::FromRequest<'r> for User {
     type Error = ();
@@ -29,15 +34,30 @@ impl<'r> request::FromRequest<'r> for User {
             .guard::<&CookieJar<'_>>()
             .await
             .expect("request cookies");
-        if let (Some(email_cookie), Some(id_cookie)) =
-            (cookies.get_private("email"), cookies.get_private("id"))
-        {
+
+        let cookie_values = (
+            cookies.get_private("email"),
+            cookies.get_private("id"),
+            cookies.get_private("created"),
+        );
+
+        if let (Some(email), Some(id), Some(created)) = cookie_values {
+            let created: DateTime<Utc> = DateTime::from_str(created.value()).unwrap();
+            let since = Utc::now().signed_duration_since(created);
+
+            if since > Duration::seconds(10) {
+                logout(cookies);
+            }
+
             return request::Outcome::Success(User {
-                email: email_cookie.value().to_string(),
-                id: id_cookie.value().to_string(),
+                email: email.value().to_string(),
+                id: id.value().to_string(),
             });
         }
 
+        // TODO: Show this error to the user and ask them
+        // if they have cookies enabled.
+        error!("Cookies don't exist");
         request::Outcome::Forward(Status::Unauthorized)
     }
 }
@@ -84,6 +104,14 @@ async fn microsoft_callback(
             .build(),
     );
 
+    let created_at = Utc::now();
+
+    cookies.add_private(
+        Cookie::build(("created", created_at.to_string()))
+            .same_site(SameSite::Lax)
+            .build(),
+    );
+
     Ok(Redirect::to("/"))
 }
 
@@ -110,7 +138,10 @@ fn index_anonymous() -> Template {
 
 #[get("/logout")]
 fn logout(cookies: &CookieJar<'_>) -> Redirect {
+    cookies.remove(Cookie::from("created"));
     cookies.remove(Cookie::from("email"));
+    cookies.remove(Cookie::from("id"));
+
     Redirect::to("/")
 }
 
