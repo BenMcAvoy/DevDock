@@ -6,7 +6,7 @@ fn main() {
 
     let minify_arg = match cfg!(not(debug_assertions)) {
         true => vec!["--minify"],
-        false => Vec::new()
+        false => Vec::new(),
     };
 
     let output = Command::new("bash")
