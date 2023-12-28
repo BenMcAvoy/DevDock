@@ -17,7 +17,7 @@ use rocket::{get, routes};
 use rocket_dyn_templates::{context, Template};
 use rocket_oauth2::{OAuth2, TokenResponse};
 
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Utc};
 
 struct User {
     pub created: DateTime<Utc>,
@@ -54,9 +54,9 @@ impl<'r> request::FromRequest<'r> for User {
 
             dbg!(since);
             if since.num_seconds() > 5 {
-                println!("Redirecting");
                 // TODO: Redirect to `/errors/old_token`
-                // remove_cookies(cookies);
+
+                remove_cookies(cookies);
             }
 
             return request::Outcome::Success(User {
