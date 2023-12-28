@@ -17,11 +17,18 @@ use rocket::{get, routes};
 use rocket_dyn_templates::{context, Template};
 use rocket_oauth2::{OAuth2, TokenResponse};
 
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Duration, Utc};
 
 struct User {
+    pub created: DateTime<Utc>,
     pub email: String,
     pub id: String,
+}
+
+fn remove_cookies(cookies: &CookieJar<'_>) {
+    cookies.remove(Cookie::from("created"));
+    cookies.remove(Cookie::from("email"));
+    cookies.remove(Cookie::from("id"));
 }
 
 // Runs during a request to an endpoint
@@ -45,13 +52,17 @@ impl<'r> request::FromRequest<'r> for User {
             let created: DateTime<Utc> = DateTime::from_str(created.value()).unwrap();
             let since = Utc::now().signed_duration_since(created);
 
-            if since > Duration::seconds(10) {
-                logout(cookies);
+            dbg!(since);
+            if since.num_seconds() > 5 {
+                println!("Redirecting");
+                // TODO: Redirect to `/errors/old_token`
+                // remove_cookies(cookies);
             }
 
             return request::Outcome::Success(User {
                 email: email.value().to_string(),
                 id: id.value().to_string(),
+                created,
             });
         }
 
@@ -115,6 +126,20 @@ async fn microsoft_callback(
     Ok(Redirect::to("/"))
 }
 
+#[get("/old_token", rank = 2)]
+fn error_old_token(user: User, cookies: &CookieJar<'_>) -> Template {
+    let days_since = Utc::now().signed_duration_since(user.created).num_days();
+
+    remove_cookies(cookies);
+
+    Template::render(
+        "old_token",
+        context! {
+            days_since
+        },
+    )
+}
+
 #[get("/other")]
 async fn other(user: User) -> String {
     user.email
@@ -138,9 +163,7 @@ fn index_anonymous() -> Template {
 
 #[get("/logout")]
 fn logout(cookies: &CookieJar<'_>) -> Redirect {
-    cookies.remove(Cookie::from("created"));
-    cookies.remove(Cookie::from("email"));
-    cookies.remove(Cookie::from("id"));
+    remove_cookies(cookies);
 
     Redirect::to("/")
 }
@@ -148,18 +171,11 @@ fn logout(cookies: &CookieJar<'_>) -> Redirect {
 #[rocket::launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount(
-            "/",
-            routes![
-                index,
-                index_anonymous,
-                logout,
-                microsoft_callback,
-                microsoft_login,
-                other,
-            ],
-        )
+        .mount("/", routes![microsoft_login, microsoft_callback, logout])
+        .mount("/", routes![index, index_anonymous])
+        .mount("/", routes![other])
+        .mount("/errors", routes![error_old_token])
         .mount("/static", FileServer::from("./static/"))
-        .attach(Template::fairing())
         .attach(OAuth2::<MicrosoftUserInfo>::fairing("microsoft"))
+        .attach(Template::fairing())
 }

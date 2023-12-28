@@ -1,0 +1,7 @@
+{% extends "base" %}
+
+{% block content %}
+  <h1>Your token is too old</h1>
+  <p>This means that you signed in too long ago. You've been signed out for security reasons and will have to sign in again.</p>
+  <p>You last logged in {{ days_since }} days ago.</p>
+{% endblock content %}

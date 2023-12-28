@@ -11,7 +11,7 @@
   </head>
 
   <body class="bg-white dark:bg-black dark:text-white">
-    <div class="m-8">
+    <div class="m-8 text-center">
       {% block content %}{% endblock content %}
     </div>
   </body>
