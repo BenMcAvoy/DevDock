@@ -42,7 +42,7 @@ pub async fn create(user: User, docker: &State<Docker>) -> Status {
     });
 
     let config = Config {
-        image: Some("debian:bookworm"),
+        image: Some("devdock"),
         ..Default::default()
     };
 
