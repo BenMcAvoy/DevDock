@@ -23,7 +23,7 @@ fn main() {
     }
 
     let output = Command::new("docker")
-        .args(["build", "-t", "devdock", "."])
+        .args(["build", "-t", "devdock", "./container/"])
         .output()
         .expect("Failed to executed docker");
 
