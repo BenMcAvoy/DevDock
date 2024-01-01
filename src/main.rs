@@ -12,6 +12,9 @@ use bollard::Docker;
 mod login;
 use login::*;
 
+mod containers;
+use containers::*;
+
 #[get("/other")]
 async fn other(user: User) -> String {
     user.email
@@ -40,9 +43,10 @@ fn rocket() -> _ {
     dbg!(docker.client_version());
 
     rocket::build()
+        .manage(docker)
         .mount("/", routes![microsoft_login, microsoft_callback, logout])
         .mount("/", routes![index, index_anonymous])
-        .mount("/", routes![other])
+        .mount("/", routes![other, create])
         .mount("/errors", routes![error_old_token])
         .mount("/static", FileServer::from("./static/"))
         .attach(OAuth2::<MicrosoftUserInfo>::fairing("microsoft"))
