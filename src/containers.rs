@@ -1,9 +1,8 @@
 // Rocket
 use rocket::get;
-use rocket::State;
 use rocket::http::Status;
+use rocket::State;
 
-use crate::AppState;
 // User
 use crate::User;
 
@@ -11,10 +10,14 @@ use crate::User;
 use bollard::container::Config;
 use bollard::container::CreateContainerOptions;
 use bollard::container::ListContainersOptions;
+use bollard::container::RemoveContainerOptions;
 use bollard::container::StartContainerOptions;
 
 // Filtering
 use std::collections::HashMap;
+
+// State
+use crate::AppState;
 
 #[get("/create")]
 pub async fn create(user: User, state: &State<AppState>) -> Status {
@@ -67,7 +70,7 @@ pub async fn create(user: User, state: &State<AppState>) -> Status {
         .await
         .unwrap();
 
-    Status::Created
+    Status::NoContent
 }
 
 #[get("/start")]
@@ -95,5 +98,34 @@ pub async fn start(user: User, state: &State<AppState>) -> Status {
         .await
         .unwrap();
 
-    Status::Ok
+    Status::NoContent
+}
+
+#[get("/delete")]
+pub async fn delete(user: User, state: &State<AppState>) -> Status {
+    let id = user.id.as_str();
+
+    let mut filters = HashMap::new();
+    filters.insert("name", vec![id]);
+
+    let options = Some(ListContainersOptions {
+        all: true,
+        filters,
+        ..Default::default()
+    });
+
+    let containers = state.docker.list_containers(options).await.unwrap();
+
+    if containers.is_empty() {
+        return Status::NotFound;
+    }
+
+    let options = Some(RemoveContainerOptions {
+        force: true,
+        ..Default::default()
+    });
+
+    state.docker.remove_container(id, options).await.unwrap();
+
+    Status::NoContent
 }
