@@ -75,7 +75,7 @@ pub async fn start(user: User, state: &State<AppState>) -> Status {
 
     let containers = state.docker.list_containers(options).await.unwrap();
 
-    if !containers.is_empty() {
+    if containers.is_empty() {
         return Status::NotFound;
     }
 
