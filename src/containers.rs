@@ -20,8 +20,7 @@ use std::collections::HashMap;
 // State
 use crate::AppState;
 
-#[get("/create")]
-pub async fn create(user: User, state: &State<AppState>) -> Status {
+pub async fn container_exists(user: &User, state: &State<AppState>) -> bool {
     let id = user.id.as_str();
 
     let mut filters = HashMap::new();
@@ -35,9 +34,16 @@ pub async fn create(user: User, state: &State<AppState>) -> Status {
 
     let containers = state.docker.list_containers(options).await.unwrap();
 
-    if !containers.is_empty() {
+    !containers.is_empty()
+}
+
+#[get("/create")]
+pub async fn create(user: User, state: &State<AppState>) -> Status {
+    if container_exists(&user, state).await {
         return Status::Conflict;
     }
+
+    let id = user.id.as_str();
 
     let options = Some(CreateContainerOptions {
         name: id,
@@ -47,8 +53,8 @@ pub async fn create(user: User, state: &State<AppState>) -> Status {
     // TODO: Use secure information for username
     // and password.
     let env = vec![
-        format!("USERNAME={}", user.id),
-        format!("PASSWORD={}", user.id),
+        format!("USERNAME={}", id),
+        format!("PASSWORD={}", id),
     ];
 
     let env: Vec<&str> = env.iter().map(|s| &**s).collect();
@@ -76,26 +82,13 @@ pub async fn create(user: User, state: &State<AppState>) -> Status {
 
 #[get("/start")]
 pub async fn start(user: User, state: &State<AppState>) -> Status {
-    let id = user.id.as_str();
-
-    let mut filters = HashMap::new();
-    filters.insert("name", vec![id]);
-
-    let options = Some(ListContainersOptions {
-        all: true,
-        filters,
-        ..Default::default()
-    });
-
-    let containers = state.docker.list_containers(options).await.unwrap();
-
-    if containers.is_empty() {
+    if !container_exists(&user, state).await {
         return Status::NotFound;
     }
 
     state
         .docker
-        .start_container(id, None::<StartContainerOptions<&str>>)
+        .start_container(&user.id, None::<StartContainerOptions<&str>>)
         .await
         .unwrap();
 
@@ -104,20 +97,7 @@ pub async fn start(user: User, state: &State<AppState>) -> Status {
 
 #[get("/stop")]
 pub async fn stop(user: User, state: &State<AppState>) -> Status {
-    let id = user.id.as_str();
-
-    let mut filters = HashMap::new();
-    filters.insert("name", vec![id]);
-
-    let options = Some(ListContainersOptions {
-        all: true,
-        filters,
-        ..Default::default()
-    });
-
-    let containers = state.docker.list_containers(options).await.unwrap();
-
-    if containers.is_empty() {
+    if !container_exists(&user, state).await {
         return Status::NotFound;
     }
 
@@ -125,27 +105,14 @@ pub async fn stop(user: User, state: &State<AppState>) -> Status {
         ..Default::default()
     });
 
-    state.docker.stop_container(id, options).await.unwrap();
+    state.docker.stop_container(&user.id, options).await.unwrap();
 
     Status::NoContent
 }
 
 #[get("/delete")]
 pub async fn delete(user: User, state: &State<AppState>) -> Status {
-    let id = user.id.as_str();
-
-    let mut filters = HashMap::new();
-    filters.insert("name", vec![id]);
-
-    let options = Some(ListContainersOptions {
-        all: true,
-        filters,
-        ..Default::default()
-    });
-
-    let containers = state.docker.list_containers(options).await.unwrap();
-
-    if containers.is_empty() {
+    if !container_exists(&user, state).await {
         return Status::NotFound;
     }
 
@@ -154,7 +121,7 @@ pub async fn delete(user: User, state: &State<AppState>) -> Status {
         ..Default::default()
     });
 
-    state.docker.remove_container(id, options).await.unwrap();
+    state.docker.remove_container(&user.id, options).await.unwrap();
 
     Status::NoContent
 }
