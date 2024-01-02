@@ -40,8 +40,18 @@ pub async fn create(user: User, state: &State<AppState>) -> Status {
         platform: None,
     });
 
+    // TODO: Use secure information for username
+    // and password.
+    let env = vec![
+        format!("USERNAME={}", user.id),
+        format!("PASSWORD={}", user.id),
+    ];
+
+    let env: Vec<&str> = env.iter().map(|s| &**s).collect();
+
     let config = Config {
         image: Some("devdock"),
+        env: Some(env),
         ..Default::default()
     };
 
