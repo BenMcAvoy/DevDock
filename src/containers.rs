@@ -12,6 +12,7 @@ use bollard::container::CreateContainerOptions;
 use bollard::container::ListContainersOptions;
 use bollard::container::RemoveContainerOptions;
 use bollard::container::StartContainerOptions;
+use bollard::container::StopContainerOptions;
 
 // Filtering
 use std::collections::HashMap;
@@ -97,6 +98,34 @@ pub async fn start(user: User, state: &State<AppState>) -> Status {
         .start_container(id, None::<StartContainerOptions<&str>>)
         .await
         .unwrap();
+
+    Status::NoContent
+}
+
+#[get("/stop")]
+pub async fn stop(user: User, state: &State<AppState>) -> Status {
+    let id = user.id.as_str();
+
+    let mut filters = HashMap::new();
+    filters.insert("name", vec![id]);
+
+    let options = Some(ListContainersOptions {
+        all: true,
+        filters,
+        ..Default::default()
+    });
+
+    let containers = state.docker.list_containers(options).await.unwrap();
+
+    if containers.is_empty() {
+        return Status::NotFound;
+    }
+
+    let options = Some(StopContainerOptions {
+        ..Default::default()
+    });
+
+    state.docker.stop_container(id, options).await.unwrap();
 
     Status::NoContent
 }
