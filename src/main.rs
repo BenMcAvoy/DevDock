@@ -23,11 +23,6 @@ pub struct AppState {
     pub sled: Db,
 }
 
-#[get("/other")]
-async fn other(user: User) -> String {
-    user.email
-}
-
 #[get("/")]
 fn index(user: User) -> Template {
     Template::render(
@@ -55,7 +50,7 @@ fn rocket() -> _ {
         .manage(state)
         .mount("/", routes![microsoft_login, microsoft_callback, logout])
         .mount("/", routes![index, index_anonymous])
-        .mount("/", routes![other, create])
+        .mount("/", routes![create, start])
         .mount("/errors", routes![error_old_token])
         .mount("/static", FileServer::from("./static/"))
         .attach(OAuth2::<MicrosoftUserInfo>::fairing("microsoft"))
