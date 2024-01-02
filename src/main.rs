@@ -9,11 +9,19 @@ use rocket_oauth2::OAuth2;
 // Docker connection
 use bollard::Docker;
 
+// Database
+use sled::Db;
+
 mod login;
 use login::*;
 
 mod containers;
 use containers::*;
+
+pub struct AppState {
+    pub docker: Docker,
+    pub sled: Db,
+}
 
 #[get("/other")]
 async fn other(user: User) -> String {
@@ -39,11 +47,12 @@ fn index_anonymous() -> Template {
 #[rocket::launch]
 fn rocket() -> _ {
     let docker = Docker::connect_with_socket_defaults().unwrap();
+    let sled = sled::open("./ports").unwrap();
 
-    dbg!(docker.client_version());
+    let state = AppState { docker, sled };
 
     rocket::build()
-        .manage(docker)
+        .manage(state)
         .mount("/", routes![microsoft_login, microsoft_callback, logout])
         .mount("/", routes![index, index_anonymous])
         .mount("/", routes![other, create])
