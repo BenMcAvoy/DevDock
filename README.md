@@ -6,6 +6,8 @@ A piece of software for personalised development containers for many people
 - [x] TailwindCSS
 - [x] Docker connection
 - [x] Basic OAuth2
-- [ ] Docker container
-- [ ] Docker container creator
+- [x] Docker container
+- [x] Docker container creator
+- [ ] Port mapping
+- [ ] Proxy container
 - [ ] Integration in UI (iframe?)
