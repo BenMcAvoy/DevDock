@@ -71,12 +71,6 @@ pub async fn create(user: User, state: &State<AppState>) -> Status {
         .await
         .unwrap();
 
-    state
-        .docker
-        .start_container(id, None::<StartContainerOptions<&str>>)
-        .await
-        .unwrap();
-
     Status::NoContent
 }
 
