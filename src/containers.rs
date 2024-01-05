@@ -1,7 +1,10 @@
+use std::net::TcpListener;
+
 // Rocket
 use rocket::get;
 use rocket::http::Status;
 use rocket::State;
+use sled::IVec;
 
 // User
 use crate::User;
@@ -15,8 +18,8 @@ use bollard::container::StartContainerOptions;
 use bollard::container::StopContainerOptions;
 
 // Internal
-use crate::AppState;
 use crate::hashmap;
+use crate::AppState;
 
 pub async fn container_exists(user: &User, state: &State<AppState>) -> bool {
     let id = user.id.as_str();
@@ -120,4 +123,22 @@ pub async fn delete(user: User, state: &State<AppState>) -> Status {
         .unwrap();
 
     Status::NoContent
+}
+
+fn add_stowed_port(user: &User, state: &State<AppState>) -> u16 {
+    let listener = TcpListener::bind(":0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+
+    drop(listener);
+
+    state
+        .sled
+        .insert(IVec::from(&*user.id), IVec::from(&*port.to_string()))
+        .unwrap();
+
+    port
+}
+
+fn drop_stowed_port(user: &User, state: &State<AppState>) {
+    state.sled.remove(IVec::from(&*user.id)).unwrap();
 }
