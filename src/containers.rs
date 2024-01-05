@@ -14,17 +14,14 @@ use bollard::container::RemoveContainerOptions;
 use bollard::container::StartContainerOptions;
 use bollard::container::StopContainerOptions;
 
-// Filtering
-use std::collections::HashMap;
-
-// State
+// Internal
 use crate::AppState;
+use crate::hashmap;
 
 pub async fn container_exists(user: &User, state: &State<AppState>) -> bool {
     let id = user.id.as_str();
 
-    let mut filters = HashMap::new();
-    filters.insert("name", vec![id]);
+    let filters = hashmap!("name" => vec![id]);
 
     let options = Some(ListContainersOptions {
         all: true,
@@ -52,10 +49,7 @@ pub async fn create(user: User, state: &State<AppState>) -> Status {
 
     // TODO: Use secure information for username
     // and password.
-    let env = vec![
-        format!("USERNAME={}", id),
-        format!("PASSWORD={}", id),
-    ];
+    let env = vec![format!("USERNAME={}", id), format!("PASSWORD={}", id)];
 
     let env: Vec<&str> = env.iter().map(|s| &**s).collect();
 
@@ -99,7 +93,11 @@ pub async fn stop(user: User, state: &State<AppState>) -> Status {
         ..Default::default()
     });
 
-    state.docker.stop_container(&user.id, options).await.unwrap();
+    state
+        .docker
+        .stop_container(&user.id, options)
+        .await
+        .unwrap();
 
     Status::NoContent
 }
@@ -115,7 +113,11 @@ pub async fn delete(user: User, state: &State<AppState>) -> Status {
         ..Default::default()
     });
 
-    state.docker.remove_container(&user.id, options).await.unwrap();
+    state
+        .docker
+        .remove_container(&user.id, options)
+        .await
+        .unwrap();
 
     Status::NoContent
 }

@@ -12,11 +12,13 @@ use bollard::Docker;
 // Database
 use sled::Db;
 
-mod login;
-use login::*;
-
 mod containers;
+mod login;
+mod macros;
+
 use containers::*;
+use login::*;
+use macros::*;
 
 pub struct AppState {
     pub docker: Docker,
