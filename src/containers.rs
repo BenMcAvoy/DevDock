@@ -18,6 +18,7 @@ use bollard::service::HostConfig;
 use bollard::service::PortBinding;
 
 // Internal
+use crate::envmap;
 use crate::hashmap;
 use crate::AppState;
 
@@ -56,11 +57,10 @@ pub async fn create(user: User, state: &State<AppState>) -> Status {
 
     // TODO: Use secure information for username
     // and password.
-    let env = vec![format!("USERNAME={}", id), format!("PASSWORD={}", id)];
-    // let env = env_map!(
-    //     "USERNAME" => id,
-    //     "PASSWORD" => id,
-    // );
+    let env = envmap!(
+        "USERNAME" => id,
+        "PASSWORD" => id,
+    );
 
     let env: Vec<&str> = env.iter().map(|s| &**s).collect();
 
