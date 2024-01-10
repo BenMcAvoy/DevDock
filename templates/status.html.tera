@@ -1,0 +1,12 @@
+{% extends "base" %}
+
+{% block content %}
+  <h1>Container status</h1>
+  <p>Port {{ port }}</p>
+
+  <div class="mx-4">
+    <a href="/delete">Delete</a>
+    <a href="/start">Start</a>
+    <a href="/stop">Stop</a>
+  </div>
+{% endblock content %}

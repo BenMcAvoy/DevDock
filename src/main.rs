@@ -13,10 +13,12 @@ use bollard::Docker;
 use sled::Db;
 
 mod containers;
+mod frontend;
 mod login;
 mod macros;
 
 use containers::*;
+use frontend::*;
 use login::*;
 
 pub struct AppState {
@@ -52,6 +54,7 @@ fn rocket() -> _ {
         .mount("/", routes![microsoft_login, microsoft_callback, logout])
         .mount("/", routes![index, index_anonymous])
         .mount("/", routes![create, start, delete, stop])
+        .mount("/", routes![status])
         .mount("/errors", routes![error_old_token])
         .mount("/static", FileServer::from("./static/"))
         .attach(OAuth2::<MicrosoftUserInfo>::fairing("microsoft"))
