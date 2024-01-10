@@ -1,12 +1,10 @@
-use std::net::TcpListener;
-
 // Rocket
 use rocket::get;
 use rocket::http::Status;
 use rocket::State;
-use sled::IVec;
 
 // User
+use crate::mapping;
 use crate::User;
 
 // Docker
@@ -16,25 +14,31 @@ use bollard::container::ListContainersOptions;
 use bollard::container::RemoveContainerOptions;
 use bollard::container::StartContainerOptions;
 use bollard::container::StopContainerOptions;
+use bollard::service::HostConfig;
+use bollard::service::PortBinding;
 
 // Internal
 use crate::hashmap;
 use crate::AppState;
+
+// Database
+use sled::IVec;
+
+// Standard
+use std::net::TcpListener;
 
 pub async fn container_exists(user: &User, state: &State<AppState>) -> bool {
     let id = user.id.as_str();
 
     let filters = hashmap!("name" => vec![id]);
 
-    let options = Some(ListContainersOptions {
+    let containers = state.docker.list_containers(Some(ListContainersOptions {
         all: true,
         filters,
         ..Default::default()
-    });
+    }));
 
-    let containers = state.docker.list_containers(options).await.unwrap();
-
-    !containers.is_empty()
+    !containers.await.unwrap().is_empty()
 }
 
 #[get("/create")]
@@ -53,10 +57,23 @@ pub async fn create(user: User, state: &State<AppState>) -> Status {
     // TODO: Use secure information for username
     // and password.
     let env = vec![format!("USERNAME={}", id), format!("PASSWORD={}", id)];
+    // let env = env_map!(
+    //     "USERNAME" => id,
+    //     "PASSWORD" => id,
+    // );
 
     let env: Vec<&str> = env.iter().map(|s| &**s).collect();
 
+    let random_port = add_stowed_port(&user, state).to_string();
+
+    println!("Port is {random_port}");
+
     let config = Config {
+        host_config: Some(HostConfig {
+            port_bindings: Some(mapping!("8080/tcp" => random_port)),
+            ..Default::default()
+        }),
+
         image: Some("devdock"),
         env: Some(env),
         ..Default::default()
@@ -122,11 +139,13 @@ pub async fn delete(user: User, state: &State<AppState>) -> Status {
         .await
         .unwrap();
 
+    drop_stowed_port(&user, state);
+
     Status::NoContent
 }
 
 fn add_stowed_port(user: &User, state: &State<AppState>) -> u16 {
-    let listener = TcpListener::bind(":0").unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let port = listener.local_addr().unwrap().port();
 
     drop(listener);
