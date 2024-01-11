@@ -13,8 +13,13 @@ use crate::AppState;
 
 #[get("/status")]
 pub async fn status(user: User, state: &State<AppState>) -> Template {
-    let ivec = state.sled.get(IVec::from(&*user.id)).unwrap().unwrap();
-    let port: u16 = u16::from_be_bytes([ivec[0], ivec[1]]);
+    let port = state
+        .sled
+        .get(IVec::from(&*user.id))
+        .unwrap()
+        .map(|p| String::from_utf8(p.to_vec()))
+        .unwrap_or(Ok("No container".to_string()))
+        .unwrap();
 
     Template::render("status", context! { port })
 }
